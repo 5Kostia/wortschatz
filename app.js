@@ -114,13 +114,36 @@ function settings() {
   show(`<h1>Настройки</h1><div class="card"><h2 style="margin-top:0">Новых слов в день</h2>${ch('lim', [5, 10, 15, 20, 25, 30, 40, 50], ST.limit)}<input type="number" id="limc" min="1" max="200" placeholder="Своё число, например 6">${btn('limset', '', 'Сохранить число', 'c')}</div>
   <div class="card"><h2 style="margin-top:0">Способ ответов</h2>${sel('meth', [['auto', 'По этапам (сначала варианты, потом ввод)'], ['choice', 'Только варианты'], ['type', 'Только ввод вручную']], ST.method)}
   <h2>Направление вопросов</h2>${sel('dirs', [['alt', 'Чередовать'], ['de_ru', 'Немецкий → русский'], ['ru_de', 'Русский → немецкий']], ST.dir)}</div>
-  <div class="card"><h2 style="margin-top:0">Копия прогресса</h2><p class="mu">Данные хранятся только на этом телефоне. Последняя копия: ${bk}.</p>${btn('exp', '', '💾 Сохранить копию', 'c')}${btn('imp', '', '📂 Загрузить копию', 'c')}</div>`);
+  <div class="card"><h2 style="margin-top:0">Копия прогресса</h2><p class="mu">Данные хранятся только на этом телефоне. Последняя копия: <span id="bkd">${bk}</span>.</p>${btn('bk', 'dl', '💾 Скачать файл', 'c')}${btn('bk', 'share', '📤 Поделиться файлом', 'c')}${btn('bk', 'copy', '📋 Скопировать текст', 'c')}<div id="bkm" class="mu"></div>
+  <h2>Загрузить копию</h2>${btn('imp', '', '📂 Выбрать файл', 'c')}${btn('impclip', '', '📋 Вставить из буфера', 'c')}</div>`);
 }
 // ---------- действия ----------
 function go(t) { tab = t; LAST = null; ({ home, learn: learnMenu, review: reviewMenu, stats, set: settings }[t] || home)(); }
-async function exportData() {
-  const blob = new Blob([JSON.stringify({ v: 1, P, ST })], { type: 'application/json' }), f = new File([blob], 'wortschatz-kopie-' + new Date().toISOString().slice(0, 10) + '.json', { type: 'application/json' });
-  try { if (navigator.canShare && navigator.canShare({ files: [f] })) await navigator.share({ files: [f] }); else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = f.name; a.click(); } ST.bk = now(); save(); settings(); } catch (e) { }
+const bkName = () => 'wortschatz-kopie-' + new Date().toISOString().slice(0, 10) + '.json';
+function bkMsg(t, ok) {
+  const m = $('#bkm'); if (m) { m.className = ok ? 'ok' : 'bad'; m.textContent = t; }
+  if (ok) { ST.bk = now(); save(); const d = $('#bkd'); if (d) d.textContent = new Date().toLocaleDateString('ru-RU'); }
+}
+async function bk(kind) {
+  const text = JSON.stringify({ v: 1, P, ST }), name = bkName();
+  try {
+    if (kind === 'dl') {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' })); a.download = name; a.style.display = 'none';
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+      bkMsg('Файл «' + name + '» скачан. Ищи его в папке «Загрузки» (приложение «Файлы»). Если там его нет, нажми «Скопировать текст».', true);
+    } else if (kind === 'share') {
+      const f = new File([text], name, { type: 'text/plain' });
+      if (!(navigator.canShare && navigator.canShare({ files: [f] }))) return bkMsg('Это устройство не умеет делиться файлом. Попробуй «Скачать файл» или «Скопировать текст».', false);
+      await navigator.share({ files: [f], title: 'Копия Wortschatz' }); bkMsg('Копия отправлена ✅', true);
+    } else { await navigator.clipboard.writeText(text); bkMsg('Текст копии скопирован ✅ Вставь его в заметки или в сообщение себе и сохрани там.', true); }
+  } catch (e) { bkMsg(e && e.name === 'AbortError' ? 'Отменено.' : 'Не получилось (' + ((e && e.name) || 'ошибка') + '). Попробуй другой способ.', false); }
+}
+function applyImport(t) {
+  try { const d = JSON.parse(t); if (!d.P) throw 0; if (confirm('Загрузить копию? Текущий прогресс на этом телефоне будет заменён.')) { P = d.P; ST = Object.assign(ST, d.ST); ST.bk = now(); save(); alert('Готово ✅'); go('home'); } } catch (x) { alert('Не получилось прочитать копию: это не файл и не текст копии Wortschatz.'); }
+}
+async function impClip() {
+  let t = ''; try { t = await navigator.clipboard.readText(); } catch (e) { t = prompt('Вставь сюда текст копии:') || ''; }
+  if (t) applyImport(t);
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a, v = b.dataset.v;
@@ -143,7 +166,7 @@ document.addEventListener('click', e => {
   else if (a === 'back') { const [c, i] = v.split(':'), card = cardOf(c, +i); L.giveBack(P, key(card), now()); save(); show(`<div class="card">${reveal(card)}<p>🔁 Слово вернулось на повтор: оно уже ждёт в разделе «Повторить».</p></div>${btn('list', c, '⬅️ К списку', 'c')}`); }
   else if (a === 'lim') { ST.limit = +v; save(); settings(); }
   else if (a === 'limset') { const n = Math.round(+$('#limc').value); if (n >= 1 && n <= 200) { ST.limit = n; save(); } settings(); }
-  else if (a === 'exp') exportData(); else if (a === 'imp') $('#imp').click();
+  else if (a === 'bk') bk(v); else if (a === 'imp') $('#imp').click(); else if (a === 'impclip') impClip();
 });
 function sendAns() {
   if (!Q || Q.done) return; const t = $('#ans').value.trim(); if (!t) return; let r;
@@ -153,7 +176,7 @@ function sendAns() {
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'ans') sendAns(); });
 document.addEventListener('change', e => {
   if (e.target.id === 'meth') { ST.method = e.target.value; save(); } else if (e.target.id === 'dirs') { ST.dir = e.target.value; save(); }
-  else if (e.target.id === 'imp' && e.target.files[0]) e.target.files[0].text().then(t => { try { const d = JSON.parse(t); if (!d.P) throw 0; if (confirm('Загрузить копию? Текущий прогресс на этом телефоне будет заменён.')) { P = d.P; ST = Object.assign(ST, d.ST); ST.bk = now(); save(); alert('Готово ✅'); go('home'); } } catch (x) { alert('Не получилось прочитать файл копии.'); } e.target.value = ''; });
+  else if (e.target.id === 'imp' && e.target.files[0]) { e.target.files[0].text().then(applyImport); e.target.value = ''; }
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 go('home');
