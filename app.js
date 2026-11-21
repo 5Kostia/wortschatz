@@ -9,6 +9,7 @@ const kvGet = async k => { const db = await idb(); return new Promise(r => { con
 const kvSet = async (k, v) => { const db = await idb(); return new Promise(r => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = r; t.onerror = r; }); };
 const save = () => { kvSet('progress', P); kvSet('settings', ST); };
 try { P = (await kvGet('progress')) || {}; ST = Object.assign(ST, await kvGet('settings')); } catch (e) { }
+if (!ST.since) { ST.since = Math.floor(Date.now() / 1000); kvSet('settings', ST); }
 D = await (await fetch('words.json')).json();
 for (const c in D) D[c].forEach((x, i) => { x.cat = c; x.idx = i; });
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
@@ -18,7 +19,7 @@ const todayN = () => Object.values(P).filter(p => p.l >= startDay()).length;
 const unseen = (cat, lv) => D[cat].filter(c => !P[key(c)] && (lv === 'ALL' || c.l === lv));
 const dueList = pre => Object.keys(P).filter(k => P[k].d <= now() && (!pre || k.startsWith(pre + ':'))).sort((a, b) => P[a].d - P[b].d).map(k => { const [cat, ...u] = k.split(':'); const c = D[cat] && D[cat].find(x => x.u === u.join(':')); return c && { c, k }; }).filter(Boolean);
 const cardOf = (cat, idx) => D[cat][idx];
-const show = h => { $('#app').innerHTML = h; scrollTo(0, 0); document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.v === tab)); };
+const show = h => { $('#app').innerHTML = h; $('#app').scrollTop = 0; document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.v === tab)); };
 const btn = (a, v, t, cls = '') => `<button class="btn ${cls}" data-a="${a}" data-v="${E(v)}">${t}</button>`;
 function reveal(c) {
   let h = c.cat === 'verb' ? `<div class="big">${E(c.d)}</div><div>${E(c.t)}</div><div class="mu">er/sie/es ${E(c.p)} · ${E(c.f)}</div>` :
@@ -36,10 +37,10 @@ function hint(c) {
 // ---------- экраны ----------
 function home() {
   const n = dueList().length, standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  const old = Object.keys(P).length && now() - ST.bk > 7 * 86400;
+  const old = Object.keys(P).length && now() - Math.max(ST.bk || 0, ST.since || 0) > 7 * 86400;
   show(`<h1>Wortschatz</h1><div class="card"><div>Сегодня новых слов: <b>${todayN()}/${ST.limit}</b></div><div>Ждут повторения: <b>${n}</b></div></div>
   ${btn('tab', 'review', `🔁 Повторить (${n})`, 'p')}${btn('tab', 'learn', '📚 Учить новые слова', 'c')}
-  ${old ? '<div class="card bad">Давно не было копии прогресса. Открой «Ещё» → «Сохранить копию».</div>' : ''}
+  ${old ? '<div class="card">💾 Прошла неделя с последней копии прогресса. Когда будет минутка, открой «Ещё» → «Сохранить копию».</div>' : ''}
   ${standalone ? '' : '<div class="card mu">Чтобы данные не пропали, добавь приложение на экран «Домой»: в Safari нажми «Поделиться» → «На экран “Домой”».</div>'}`);
 }
 function learnMenu() {
