@@ -1,4 +1,8 @@
 (async () => {
+// iPhone в режиме приложения иногда отдаёт высоту окна на высоту строки состояния меньше, и под нижней панелью остаётся пустая полоса.
+// В этом режиме берём высоту из размера экрана.
+const fit = () => { if (navigator.standalone) { const p = innerHeight >= innerWidth, m = Math.max(screen.width, screen.height), n = Math.min(screen.width, screen.height); document.body.style.height = (p ? m : n) + 'px'; } };
+fit(); addEventListener('resize', fit); addEventListener('orientationchange', fit);
 const $ = s => document.querySelector(s), now = () => Math.floor(Date.now() / 1000);
 const E = s => s == null ? '' : String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const CATS = { art: ['🔤', 'Артикли', 0], noun: ['📘', 'Существительные', 1], verb: ['🏃', 'Глаголы', 1], adj: ['🎨', 'Прилагательные', 0], vp: ['🔗', 'Глаголы с предлогами', 0], phr: ['💬', 'Фразеологизмы', 0] };
