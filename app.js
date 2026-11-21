@@ -116,16 +116,7 @@ function settings() {
   <h2>Направление вопросов</h2>${sel('dirs', [['alt', 'Чередовать'], ['de_ru', 'Немецкий → русский'], ['ru_de', 'Русский → немецкий']], ST.dir)}</div>
   <div class="card"><h2 style="margin-top:0">Копия прогресса</h2><p class="mu">Данные хранятся только на этом телефоне. Последняя копия: <span id="bkd">${bk}</span>.</p>${btn('bk', 'dl', '💾 Скачать файл', 'c')}${btn('bk', 'share', '📤 Поделиться файлом', 'c')}${btn('bk', 'copy', '📋 Скопировать текст', 'c')}<div id="bkm" class="mu"></div>
   <h2>Загрузить копию</h2>${btn('imp', '', '📂 Выбрать файл', 'c')}${btn('impclip', '', '📋 Вставить из буфера', 'c')}</div>
-  <p class="mu" id="dbg" style="text-align:center;font-size:12px">Версия 0.1.7</p>`);
-  dbgFill();
-}
-function dbgFill() {
-  const mk = css => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;width:1px;visibility:hidden;pointer-events:none;' + css; document.body.appendChild(d); return d; };
-  const a = mk('top:0;height:100vh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)'), b = mk('bottom:0;height:0'), c = mk('top:0;height:100dvh'), d = mk('top:0;height:100lvh');
-  const cs = getComputedStyle(a), vv = window.visualViewport;
-  const t = `inner ${innerHeight} | screen ${screen.height} | vv ${vv ? Math.round(vv.height) : '-'} | vh ${a.offsetHeight} | dvh ${c.offsetHeight} | lvh ${d.offsetHeight} | fixed-bottom ${Math.round(b.getBoundingClientRect().bottom)} | body ${Math.round(document.body.getBoundingClientRect().height)} | nav-bottom ${Math.round(document.querySelector('nav').getBoundingClientRect().bottom)} | env ${cs.paddingTop}/${cs.paddingBottom} | standalone ${navigator.standalone}`;
-  [a, b, c, d].forEach(x => x.remove());
-  const el = document.getElementById('dbg'); if (el) el.innerHTML += '<br>' + t;
+  <p class="mu" style="text-align:center">Версия 0.1.8</p>`);
 }
 
 // ---------- действия ----------
