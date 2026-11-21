@@ -115,10 +115,8 @@ function settings() {
   <div class="card"><h2 style="margin-top:0">Способ ответов</h2>${sel('meth', [['auto', 'По этапам (сначала варианты, потом ввод)'], ['choice', 'Только варианты'], ['type', 'Только ввод вручную']], ST.method)}
   <h2>Направление вопросов</h2>${sel('dirs', [['alt', 'Чередовать'], ['de_ru', 'Немецкий → русский'], ['ru_de', 'Русский → немецкий']], ST.dir)}</div>
   <div class="card"><h2 style="margin-top:0">Копия прогресса</h2><p class="mu">Данные хранятся только на этом телефоне. Последняя копия: <span id="bkd">${bk}</span>.</p>${btn('bk', 'dl', '💾 Скачать файл', 'c')}${btn('bk', 'share', '📤 Поделиться файлом', 'c')}${btn('bk', 'copy', '📋 Скопировать текст', 'c')}<div id="bkm" class="mu"></div>
-  <h2>Загрузить копию</h2>${btn('imp', '', '📂 Выбрать файл', 'c')}${btn('impclip', '', '📋 Вставить из буфера', 'c')}</div>
-  <p class="mu" style="text-align:center">Версия 0.1.8</p>`);
+  <h2>Загрузить копию</h2>${btn('imp', '', '📂 Выбрать файл', 'c')}${btn('impclip', '', '📋 Вставить из буфера', 'c')}</div>`);
 }
-
 // ---------- действия ----------
 function go(t) { tab = t; LAST = null; ({ home, learn: learnMenu, review: reviewMenu, stats, set: settings }[t] || home)(); }
 const bkName = () => 'wortschatz-kopie-' + new Date().toISOString().slice(0, 10) + '.json';
